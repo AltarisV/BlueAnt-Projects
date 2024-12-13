@@ -1,0 +1,19 @@
+{
+    "name": "leon/blue-ant-projects",
+    "description": "displays blueant projects",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Leon\\BlueAntProjects\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "AltarisV",
+            "email": "leon.schuessler@freenet.de"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.9"
+    }
+}

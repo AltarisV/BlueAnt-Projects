@@ -1,0 +1,25 @@
+# Allgemein: Betriebssystem- und Editor-spezifische Dateien ausschließen
+.DS_Store
+Thumbs.db
+
+# IntelliJ IDEA / PhpStorm spezifische Dateien und Ordner
+.idea/
+*.iml
+
+# Composer Vendor-Ordner
+vendor/
+
+# Logfiles, Cache und temporäre Dateien
+/logs/
+cache/
+*.log
+.tmp
+
+# Falls Sie Tests haben, eventuell Test-Reports ignorieren
+coverage/
+reports/
+
+# Sonstige lokale Konfigurationsdateien (je nach Projekt)
+.env
+.env.local
+.env.*.local
