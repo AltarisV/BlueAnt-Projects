@@ -109,9 +109,34 @@ echo <<<HTML
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laufende Projekte</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script>
+        // JavaScript für den aktiven Filter
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterInput = document.getElementById('projectFilter');
+            const projects = document.querySelectorAll('.project-card');
+
+            filterInput.addEventListener('input', () => {
+                const filterText = filterInput.value.toLowerCase();
+
+                projects.forEach(project => {
+                    const projectText = project.textContent.toLowerCase();
+                    if (projectText.includes(filterText)) {
+                        project.style.display = 'block';
+                    } else {
+                        project.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <h1>Laufende Projekte</h1>
+    <!-- Filter-Formular -->
+    <div class="filter-container">
+        <label for="projectFilter"><strong>Filter nach Projektname:</strong></label>
+        <input type="text" id="projectFilter" placeholder="Projektname eingeben...">
+    </div>
     <div class="projects-grid">
 HTML;
 

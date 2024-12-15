@@ -123,3 +123,22 @@ h1 {
     overflow-y: auto;
     white-space: pre-wrap; /* Zeilenumbrüche innerhalb des Inhalts */
 }
+
+.filter-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#projectFilter {
+    padding: 10px;
+    width: 300px;
+    font-size: 1em;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+#projectFilter:focus {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
