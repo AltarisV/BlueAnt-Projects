@@ -59,9 +59,8 @@ pre {
 /* Grid Container für Projekte */
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 gleich breite Spalten */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Flexibles Grid */
     gap: 20px; /* Abstand zwischen den Boxen */
-    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
