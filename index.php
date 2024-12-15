@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
 use GuzzleHttp\Client;
 use Dotenv\Dotenv;
@@ -9,7 +9,7 @@ $client = new Client([
     'timeout'  => 5.0,
 ]);
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $token = $_ENV['BLUE_ANT_API_TOKEN'];
@@ -101,7 +101,18 @@ foreach ($projects as $project) {
 }
 
 // Ausgabe
-echo "<h1>Laufende Projekte</h1>";
+echo <<<HTML
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laufende Projekte</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>Laufende Projekte</h1>
+HTML;
 
 foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
@@ -150,3 +161,5 @@ foreach ($runningProjects as $project) {
     echo "</ul>";
     echo "</details>";
 }
+
+echo "</body></html>";
