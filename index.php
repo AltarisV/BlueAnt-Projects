@@ -112,11 +112,13 @@ echo <<<HTML
 </head>
 <body>
     <h1>Laufende Projekte</h1>
+    <div class="projects-grid">
 HTML;
 
 foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
 
+    echo "<div class='project-card'>";
     echo "<details>";
     echo "<summary>" . htmlspecialchars($projectName) . "</summary>";
     echo "<ul>";
@@ -160,6 +162,8 @@ foreach ($runningProjects as $project) {
 
     echo "</ul>";
     echo "</details>";
+    echo "</div>";
 }
 
+echo "</div>"; // Schließt die projects-grid Div
 echo "</body></html>";

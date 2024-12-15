@@ -55,3 +55,72 @@ pre {
     border-radius: 5px;
     overflow: auto;
 }
+
+/* Grid Container für Projekte */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 gleich breite Spalten */
+    gap: 20px; /* Abstand zwischen den Boxen */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Einzelne Projektkarte */
+.project-card {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.project-card:hover {
+    transform: translateY(-5px); /* Leichtes Heben beim Hover */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.project-card summary {
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.project-card ul {
+    list-style-type: none;
+    margin: 0;
+    padding-left: 10px;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.project-card li {
+    margin-bottom: 5px;
+}
+
+.project-card strong {
+    color: #000;
+}
+
+/* Header */
+h1 {
+    text-align: center;
+    color: #333;
+    font-size: 2em;
+    margin-top: 20px;
+}
+
+/* Scrollbarer Bereich für große Arrays */
+.project-card pre {
+    background-color: #f7f7f7;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-height: 150px; /* Maximale Höhe für große Inhalte */
+    overflow-y: auto;
+    white-space: pre-wrap; /* Zeilenumbrüche innerhalb des Inhalts */
+}
