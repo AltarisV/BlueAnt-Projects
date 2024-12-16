@@ -110,6 +110,30 @@ foreach ($currencies as $currency) {
     }
 }
 
+// API-Aufruf: Alle Projekttypen abrufen und Mapping aufbauen
+$typesResponse = $client->get('v1/masterdata/projects/types', [
+    'headers' => [
+        'Accept' => 'application/json',
+        'Authorization' => 'Bearer ' . $token
+    ]
+]);
+
+$typesData = json_decode($typesResponse->getBody()->getContents(), true);
+
+if (!isset($typesData['types'])) {
+    echo "Keine Projekttypen gefunden oder Fehler beim API-Call.";
+    exit;
+}
+
+// Mapping: typeId -> shortDescription
+$typeMapping = [];
+foreach ($typesData['types'] as $type) {
+    if (isset($type['id'], $type['shortDescription'])) {
+        $typeMapping[$type['id']] = $type['shortDescription'];
+    }
+}
+
+
 
 
 // Laufende Projekte filtern
@@ -184,6 +208,10 @@ foreach ($runningProjects as $project) {
             // Currency-Name anzeigen
             $currencyName = $currencyMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($currencyName) . ")</li>";
+        } elseif ($key === 'typeId') {
+                    // Typ-Name anzeigen
+                    $typeName = $typeMapping[$value] ?? 'unbekannt';
+                    echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($typeName) . ")</li>";
         } elseif ($key === 'clients' && is_array($value)) {
             // Clients ausgeben
             echo "<li><strong>clients:</strong><br><ul>";
