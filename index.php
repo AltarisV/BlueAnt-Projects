@@ -85,6 +85,33 @@ function getClientText($client, $token, $clientId, &$cache) {
     }
 }
 
+// API-Aufruf: Alle Währungen abrufen und Mapping aufbauen
+$currenciesResponse = $client->get('v1/masterdata/currencies', [
+    'headers' => [
+        'Accept' => 'application/json',
+        'Authorization' => 'Bearer ' . $token
+    ]
+]);
+
+$currenciesData = json_decode($currenciesResponse->getBody()->getContents(), true);
+
+if (!isset($currenciesData['currencies'])) {
+    echo "Keine Währungen gefunden oder Fehler beim API-Call.";
+    exit;
+}
+
+$currencies = $currenciesData['currencies'];
+
+// Mapping: currencyId -> currencyText
+$currencyMapping = [];
+foreach ($currencies as $currency) {
+    if (isset($currency['id'], $currency['name'])) {
+        $currencyMapping[$currency['id']] = $currency['name'];
+    }
+}
+
+
+
 // Laufende Projekte filtern
 $now = new DateTime();
 $runningProjects = [];
@@ -153,6 +180,10 @@ foreach ($runningProjects as $project) {
             // Department-Name anzeigen
             $depName = $departmentMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($depName) . ")</li>";
+        } elseif ($key === 'currencyId') {
+            // Currency-Name anzeigen
+            $currencyName = $currencyMapping[$value] ?? 'unbekannt';
+            echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($currencyName) . ")</li>";
         } elseif ($key === 'clients' && is_array($value)) {
             // Clients ausgeben
             echo "<li><strong>clients:</strong><br><ul>";
