@@ -282,38 +282,98 @@ echo <<<HTML
     <title>Laufende Projekte</title>
     <link rel="stylesheet" href="css/styles.css">
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const filterInput = document.getElementById('projectFilter');
-            const projects = document.querySelectorAll('.project-card');
-
-            filterInput.addEventListener('input', () => {
-                const filterText = filterInput.value.toLowerCase();
-
-                projects.forEach(project => {
-                    const projectText = project.textContent.toLowerCase();
-                    if (projectText.includes(filterText)) {
-                        project.style.display = 'block';
-                    } else {
-                        project.style.display = 'none';
-                    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const filterInput = document.getElementById('projectFilter');
+        const filterType = document.getElementById('filterType');
+        const projects = document.querySelectorAll('.project-card');
+    
+        // Vorschläge für Projektart, Projektstatus und Unternehmensbereich
+        const suggestions = {
+            'type': Array.from(new Set([...projects].map(p => p.dataset.type).filter(Boolean))),
+            'status': Array.from(new Set([...projects].map(p => p.dataset.status).filter(Boolean))),
+            'department': Array.from(new Set([...projects].map(p => p.dataset.department).filter(Boolean)))
+        };
+    
+        const updateSuggestions = () => {
+            const selectedType = filterType.value;
+            const dataList = document.getElementById('filterSuggestions');
+            dataList.innerHTML = '';
+    
+            if (['type', 'status', 'department'].includes(selectedType)) {
+                suggestions[selectedType].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    dataList.appendChild(option);
                 });
+            }
+        };
+    
+        // Vorschläge beim Klicken ins Eingabefeld aktualisieren
+        filterInput.addEventListener('focus', updateSuggestions);
+    
+        // Filter leeren, wenn der Filtertyp geändert wird
+        filterType.addEventListener('change', () => {
+            filterInput.value = '';
+            updateSuggestions();
+            projects.forEach(project => project.style.display = 'block');
+        });
+    
+        // Projektkarte vergrößern
+        projects.forEach(project => {
+            project.addEventListener('click', () => {
+                project.classList.toggle('expanded');
+                if (project.classList.contains('expanded')) {
+                    const closeButton = document.createElement('button');
+                    closeButton.className = 'close-button';
+                    closeButton.innerHTML = '&times;';
+                    closeButton.addEventListener('click', () => {
+                        project.classList.remove('expanded');
+                        closeButton.remove();
+                    });
+                    project.appendChild(closeButton);
+                } else {
+                    const closeButton = project.querySelector('.close-button');
+                    if (closeButton) closeButton.remove();
+                }
             });
         });
+    });
     </script>
 </head>
 <body>
     <h1>Laufende Projekte</h1>
     <div class="filter-container">
-        <label for="projectFilter"><strong>Filter nach Projektname:</strong></label>
-        <input type="text" id="projectFilter" placeholder="Projektname eingeben...">
+        <label for="projectFilter"><strong>Filter nach:</strong></label>
+        <select id="filterType">
+            <option value="name">Projektname</option>
+            <option value="number">Projektnummer</option>
+            <option value="department">Unternehmensbereich</option>
+            <option value="type">Projektart</option>
+            <option value="status">Projektstatus</option>
+            <option value="leader">Projektleiter</option>
+        </select>
+        <input type="text" id="projectFilter" placeholder="Filter eingeben..." list="filterSuggestions">
+        <datalist id="filterSuggestions"></datalist>
     </div>
-    <div class="projects-grid">
 HTML;
 
 foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
+    $projectNumber = $project['number'] ?? '';
+    $department = $departmentMapping[$project['departmentId']] ?? 'unbekannt';
+    $type = $typeMapping[$project['typeId']] ?? 'unbekannt';
+    $statusDetails = getStatusDetails($client, $token, $project['statusId'], $statusCache);
+    $status = $statusDetails['text'] ?? 'unbekannt';
+    $leader = getPersonName($client, $token, $project['projectLeaderId'], $personNameCache);
 
-    echo "<div class='project-card'>";
+    echo "<div class='project-card' 
+            data-name='" . htmlspecialchars($projectName) . "' 
+            data-number='" . htmlspecialchars($projectNumber) . "' 
+            data-department='" . htmlspecialchars($department) . "' 
+            data-type='" . htmlspecialchars($type) . "' 
+            data-status='" . htmlspecialchars($status) . "' 
+            data-leader='" . htmlspecialchars($leader) . "'>";
+
     echo "<details>";
     echo "<summary>" . htmlspecialchars($projectName) . "</summary>";
     echo "<ul>";
@@ -326,31 +386,20 @@ foreach ($runningProjects as $project) {
         $value = $project[$key];
 
         if ($key === 'departmentId') {
-            $depName = $departmentMapping[$value] ?? 'unbekannt';
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($depName) . "</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($department) . "</li>";
         } elseif ($key === 'typeId') {
-            $typeName = $typeMapping[$value] ?? 'unbekannt';
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($typeName) . "</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($type) . "</li>";
         } elseif ($key === 'statusId') {
-            $statusDetails = getStatusDetails($client, $token, $value, $statusCache);
-            $statusText = $statusDetails['text'];
-            $noteWhenStatusChanges = $statusDetails['note'];
-
-            // Status und Info-Feld anzeigen
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($statusText) . "</li>";
-            // echo "<li style='font-size: 0.9em; color: gray;'>
-            //  <em>Info:</em> " . htmlspecialchars($noteWhenStatusChanges) . "
-            // </li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($status) . "</li>";
         } elseif ($key === 'projectLeaderId') {
-            $leaderName = getPersonName($client, $token, $value, $personNameCache);
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leaderName) . "</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leader) . "</li>";
         } elseif ($key === 'clients' && is_array($value)) {
             echo "<li><strong>{$label}:</strong><ul>";
             foreach ($value as $clientData) {
                 if (isset($clientData['clientId'])) {
                     $currentClientId = $clientData['clientId'];
                     $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
-                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%)</li>";
+                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%</li>";
                 }
             }
             echo "</ul></li>";
@@ -358,43 +407,26 @@ foreach ($runningProjects as $project) {
             $priorityText = $priorityMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
         } elseif ($key === 'customFields' && is_array($value)) {
-            $customFieldOrder = [
-                'Vertraulichkeit',
-                'Klassifikation',
-                'Strategiebeitrag'
-            ];
-
+            $customFieldOrder = ['Vertraulichkeit', 'Klassifikation', 'Strategiebeitrag'];
             echo "<li><strong>Zusätzliche Informationen:</strong><br><ul>";
 
             foreach ($customFieldOrder as $fieldName) {
-                $found = false;
-
                 foreach ($value as $fieldId => $fieldValue) {
                     $actualFieldName = $customFieldMapping[$fieldId]['name'] ?? '';
-
                     if ($actualFieldName === $fieldName) {
-                        // Optionen prüfen und auflösen
                         $options = $customFieldMapping[$fieldId]['options'] ?? [];
                         $resolvedValue = $fieldValue;
-
-                        if (!empty($options)) {
-                            foreach ($options as $option) {
-                                if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
-                                    $resolvedValue = $option['value'];
-                                    break;
-                                }
+                        foreach ($options as $option) {
+                            if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
+                                $resolvedValue = $option['value'];
+                                break;
                             }
                         }
-
-                        if (!empty(trim(strip_tags($resolvedValue)))) {
-                            echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br($resolvedValue) . "</li>";
-                        }
-                        $found = true;
+                        echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br(htmlspecialchars($resolvedValue)) . "</li>";
                         break;
                     }
                 }
             }
-
             echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
