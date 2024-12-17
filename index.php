@@ -56,8 +56,10 @@ foreach ($departments as $dept) {
     }
 }
 
-// Hilfs-Array zum Cachen der Client-Namen
+// Caches
 $clientNameCache = [];
+$statusCache = [];
+$runningProjects = [];
 
 // Hilfsfunktion, um den Client-Text per API abzurufen
 function getClientText($client, $token, $clientId, &$cache) {
@@ -112,6 +114,38 @@ function getPersonName($client, $token, $personId, &$cache) {
     return 'unbekannt';
 }
 
+function getStatusDetails($client, $token, $statusId, &$cache) {
+    // Prüfen, ob die Daten bereits im Cache vorhanden sind
+    if (isset($cache[$statusId])) {
+        return $cache[$statusId];
+    }
+
+    try {
+        // API-Call für den spezifischen Status
+        $response = $client->get('v1/masterdata/projects/statuses/' . $statusId, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token
+            ]
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        if (isset($data['projectStatus']['text'], $data['projectStatus']['noteWhenStatusChanges'])) {
+            $cache[$statusId] = [
+                'text' => $data['projectStatus']['text'],
+                'note' => $data['projectStatus']['noteWhenStatusChanges']
+            ];
+            return $cache[$statusId];
+        }
+    } catch (Exception $e) {
+        // Fehlerfall
+        return ['text' => 'unbekannt', 'note' => 'Keine zusätzlichen Informationen verfügbar'];
+    }
+
+    return ['text' => 'unbekannt', 'note' => 'Keine zusätzlichen Informationen verfügbar'];
+}
+
 // API-Aufruf: Alle Währungen abrufen und Mapping aufbauen
 $currenciesResponse = $client->get('v1/masterdata/currencies', [
     'headers' => [
@@ -160,11 +194,34 @@ foreach ($typesData['types'] as $type) {
     }
 }
 
+$prioritiesResponse = $client->get('v1/masterdata/projects/priorities', [
+    'headers' => [
+        'Accept' => 'application/json',
+        'Authorization' => 'Bearer ' . $token
+    ]
+]);
+
+$prioritiesData = json_decode($prioritiesResponse->getBody()->getContents(), true);
+
+if (!isset($prioritiesData['priorities'])) {
+    echo "Keine Prioritäten gefunden oder Fehler beim API-Call.";
+    exit;
+}
+
+// Mapping: priorityId -> priorityText
+$priorityMapping = [];
+foreach ($prioritiesData['priorities'] as $priority) {
+    if (isset($priority['id'], $priority['text'])) {
+        $priorityMapping[$priority['id']] = $priority['text'];
+    }
+}
+
 $fieldOrder = [
     'name' => 'Projektname',
     'number' => 'Projektnummer',
     'departmentId' => 'Unternehmensbereich',
     'typeId' => 'Projektart',
+    'statusId' => 'Projektstatus',
     'projectLeaderId' => 'Projektleiter',
     'clients' => 'Kunden',
     'priorityId' => 'Priorität',
@@ -178,7 +235,6 @@ $fieldOrder = [
 
 
 $now = new DateTime();
-$runningProjects = [];
 
 // Laufende Projekte filtern
 foreach ($projects as $project) {
@@ -250,6 +306,16 @@ foreach ($runningProjects as $project) {
         } elseif ($key === 'typeId') {
             $typeName = $typeMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($typeName) . "</li>";
+        } elseif ($key === 'statusId') {
+            $statusDetails = getStatusDetails($client, $token, $value, $statusCache);
+            $statusText = $statusDetails['text'];
+            $noteWhenStatusChanges = $statusDetails['note'];
+
+            // Status und Info-Feld anzeigen
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($statusText) . "</li>";
+            // echo "<li style='font-size: 0.9em; color: gray;'>
+            //  <em>Info:</em> " . htmlspecialchars($noteWhenStatusChanges) . "
+            // </li>";
         } elseif ($key === 'projectLeaderId') {
             $leaderName = getPersonName($client, $token, $value, $personNameCache);
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leaderName) . "</li>";
@@ -263,6 +329,9 @@ foreach ($runningProjects as $project) {
                 }
             }
             echo "</ul></li>";
+        } elseif ($key === 'priorityId') {
+            $priorityText = $priorityMapping[$value] ?? 'unbekannt';
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
         } elseif ($key === 'customFields' && is_array($value)) {
             echo "<li><strong>{$label}:</strong><ul>";
             foreach ($value as $fieldKey => $fieldValue) {
