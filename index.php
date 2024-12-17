@@ -386,14 +386,12 @@ foreach ($runningProjects as $project) {
                             }
                         }
 
-                        echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br($resolvedValue) . "</li>";
+                        if (!empty(trim(strip_tags($resolvedValue)))) {
+                            echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br($resolvedValue) . "</li>";
+                        }
                         $found = true;
                         break;
                     }
-                }
-
-                if (!$found) {
-                    echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> <em>Keine Angabe</em></li>";
                 }
             }
 
