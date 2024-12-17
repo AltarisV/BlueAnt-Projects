@@ -31,7 +31,7 @@ if (!isset($projectsData['projects'])) {
 
 $projects = $projectsData['projects'];
 
-// Departments abrufen und Mapping aufbauen
+// Departments abrufen
 $departmentsResponse = $client->get('v1/masterdata/departments', [
     'headers' => [
         'Accept' => 'application/json',
@@ -76,7 +76,6 @@ function getClientText($client, $token, $clientId, &$cache) {
 
     $data = json_decode($response->getBody()->getContents(), true);
 
-    // Auf $data['customer']['text'] zugreifen
     if (isset($data['customer']['text'])) {
         $cache[$clientId] = $data['customer']['text'];
         return $data['customer']['text'];
@@ -136,10 +135,10 @@ foreach ($typesData['types'] as $type) {
 
 
 
-// Laufende Projekte filtern
 $now = new DateTime();
 $runningProjects = [];
 
+// Laufende Projekte filtern
 foreach ($projects as $project) {
     if (isset($project['start'], $project['end'])) {
         $start = new DateTime($project['start']);
@@ -151,7 +150,6 @@ foreach ($projects as $project) {
     }
 }
 
-// Ausgabe
 echo <<<HTML
 <!DOCTYPE html>
 <html lang="de">
@@ -161,7 +159,6 @@ echo <<<HTML
     <title>Laufende Projekte</title>
     <link rel="stylesheet" href="css/styles.css">
     <script>
-        // JavaScript für den aktiven Filter
         document.addEventListener('DOMContentLoaded', () => {
             const filterInput = document.getElementById('projectFilter');
             const projects = document.querySelectorAll('.project-card');
@@ -183,7 +180,6 @@ echo <<<HTML
 </head>
 <body>
     <h1>Laufende Projekte</h1>
-    <!-- Filter-Formular -->
     <div class="filter-container">
         <label for="projectFilter"><strong>Filter nach Projektname:</strong></label>
         <input type="text" id="projectFilter" placeholder="Projektname eingeben...">
@@ -216,20 +212,17 @@ foreach ($runningProjects as $project) {
             // Clients ausgeben
             echo "<li><strong>clients:</strong><br><ul>";
             foreach ($value as $clientData) {
-                // Prüfen, ob eine clientId vorhanden ist und eine Zahl ist
-                if (isset($clientData['clientId']) && is_numeric($clientData['clientId'])) {
+                if (isset($clientData['clientId'])) {
                     $currentClientId = $clientData['clientId'];
                     $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
                     // Client-Info ausgeben (ID und Name)
                     echo "<li>clientId: " . htmlspecialchars((string)$currentClientId) . " (" . htmlspecialchars($clientText) . "), share: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "</li>";
                 } else {
-                    // Falls clientId nicht im erwarteten Format vorhanden ist
                     echo "<li>client: unvollständige Daten</li>";
                 }
             }
             echo "</ul></li>";
         } elseif (is_array($value)) {
-            // Sonstige verschachtelte Arrays
             echo "<li><strong>" . htmlspecialchars($key) . ":</strong><br><ul>";
             foreach ($value as $subKey => $subValue) {
                 if (is_array($subValue)) {
@@ -249,5 +242,5 @@ foreach ($runningProjects as $project) {
     echo "</div>";
 }
 
-echo "</div>"; // Schließt die projects-grid Div
+echo "</div>";
 echo "</body></html>";
