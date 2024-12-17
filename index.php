@@ -286,19 +286,19 @@ echo <<<HTML
         const filterInput = document.getElementById('projectFilter');
         const filterType = document.getElementById('filterType');
         const projects = document.querySelectorAll('.project-card');
-    
+
         // Vorschläge für Projektart, Projektstatus und Unternehmensbereich
         const suggestions = {
             'type': Array.from(new Set([...projects].map(p => p.dataset.type).filter(Boolean))),
             'status': Array.from(new Set([...projects].map(p => p.dataset.status).filter(Boolean))),
             'department': Array.from(new Set([...projects].map(p => p.dataset.department).filter(Boolean)))
         };
-    
+
         const updateSuggestions = () => {
             const selectedType = filterType.value;
             const dataList = document.getElementById('filterSuggestions');
             dataList.innerHTML = '';
-    
+
             if (['type', 'status', 'department'].includes(selectedType)) {
                 suggestions[selectedType].forEach(item => {
                     const option = document.createElement('option');
@@ -307,33 +307,42 @@ echo <<<HTML
                 });
             }
         };
-    
+
         // Vorschläge beim Klicken ins Eingabefeld aktualisieren
         filterInput.addEventListener('focus', updateSuggestions);
-    
-        // Filter leeren, wenn der Filtertyp geändert wird
+        
+            // Filter leeren, wenn der Filtertyp geändert wird
         filterType.addEventListener('change', () => {
             filterInput.value = '';
             updateSuggestions();
             projects.forEach(project => project.style.display = 'block');
         });
-    
-        // Projektkarte vergrößern
-        projects.forEach(project => {
-            project.addEventListener('click', () => {
-                project.classList.toggle('expanded');
-                if (project.classList.contains('expanded')) {
-                    const closeButton = document.createElement('button');
-                    closeButton.className = 'close-button';
-                    closeButton.innerHTML = '&times;';
-                    closeButton.addEventListener('click', () => {
-                        project.classList.remove('expanded');
-                        closeButton.remove();
-                    });
-                    project.appendChild(closeButton);
+
+        // Vorschläge beim Tippen aktualisieren
+        filterInput.addEventListener('input', (e) => {
+            const filterText = e.target.value.toLowerCase();
+            const selectedType = filterType.value;
+
+            if (['type', 'status', 'department'].includes(selectedType)) {
+                const dataList = document.getElementById('filterSuggestions');
+                dataList.innerHTML = '';
+
+                suggestions[selectedType].forEach(item => {
+                    if (item.toLowerCase().includes(filterText)) {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        dataList.appendChild(option);
+                    }
+                });
+            }
+
+            // Filter anwenden
+            projects.forEach(project => {
+                const attributeValue = project.dataset[selectedType] || '';
+                if (attributeValue.toLowerCase().includes(filterText)) {
+                    project.style.display = 'block';
                 } else {
-                    const closeButton = project.querySelector('.close-button');
-                    if (closeButton) closeButton.remove();
+                    project.style.display = 'none';
                 }
             });
         });
