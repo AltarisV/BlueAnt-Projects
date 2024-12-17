@@ -142,3 +142,31 @@ h1 {
 #projectFilter:focus {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
+
+.custom-fields {
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.custom-fields strong {
+    display: block;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.custom-fields p {
+    margin: 0 0 10px;
+    color: #555;
+}
+
+.custom-fields .info-text {
+    color: #777;
+    font-size: 13px;
+    font-style: italic;
+}

@@ -216,6 +216,31 @@ foreach ($prioritiesData['priorities'] as $priority) {
     }
 }
 
+$customFieldsResponse = $client->get('v1/masterdata/customfield/definitions/Project', [
+    'headers' => [
+        'Accept' => 'application/json',
+        'Authorization' => 'Bearer ' . $token
+    ]
+]);
+
+$customFieldsData = json_decode($customFieldsResponse->getBody()->getContents(), true);
+
+if (!isset($customFieldsData['customFields'])) {
+    echo "Keine Custom Fields gefunden oder Fehler beim API-Call.";
+    exit;
+}
+
+$customFieldMapping = [];
+foreach ($customFieldsData['customFields'] as $field) {
+    if (isset($field['id'], $field['name'])) {
+        $customFieldMapping[$field['id']] = [
+            'name' => $field['name'],
+            'options' => $field['options'] ?? [] // Optionen speichern, falls vorhanden
+        ];
+    }
+}
+
+
 $fieldOrder = [
     'name' => 'Projektname',
     'number' => 'Projektnummer',
@@ -333,9 +358,26 @@ foreach ($runningProjects as $project) {
             $priorityText = $priorityMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
         } elseif ($key === 'customFields' && is_array($value)) {
-            echo "<li><strong>{$label}:</strong><ul>";
-            foreach ($value as $fieldKey => $fieldValue) {
-                echo "<li>" . htmlspecialchars($fieldKey) . ": " . htmlspecialchars((string)$fieldValue) . "</li>";
+            echo "<li><strong>{$label}:</strong><br><ul>";
+            foreach ($value as $fieldId => $fieldValue) {
+                // Feldnamen abrufen
+                $fieldName = $customFieldMapping[$fieldId]['name'] ?? 'Unbekanntes Feld';
+
+                // Optionen prüfen und Wert auflösen, falls vorhanden
+                $options = $customFieldMapping[$fieldId]['options'] ?? [];
+                $resolvedValue = $fieldValue; // Standardmäßig direkter Wert
+
+                if (!empty($options)) {
+                    foreach ($options as $option) {
+                        if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
+                            $resolvedValue = $option['value'];
+                            break;
+                        }
+                    }
+                }
+
+                // Feld anzeigen
+                echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . htmlspecialchars($resolvedValue) . "</li>";
             }
             echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
