@@ -252,7 +252,7 @@ $fieldOrder = [
     'priorityId' => 'Priorität',
     'costCentreNumber' => 'Kostenstelle',
     'planningType' => 'Planungsart',
-    'billingType' => 'Abrechnungsart',
+    //'billingType' => 'Abrechnungsart',
     'customFields' => 'Custom Fields',
     'start' => 'Startdatum',
     'end' => 'Enddatum'
@@ -358,27 +358,45 @@ foreach ($runningProjects as $project) {
             $priorityText = $priorityMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
         } elseif ($key === 'customFields' && is_array($value)) {
-            echo "<li><strong>{$label}:</strong><br><ul>";
-            foreach ($value as $fieldId => $fieldValue) {
-                // Feldnamen abrufen
-                $fieldName = $customFieldMapping[$fieldId]['name'] ?? 'Unbekanntes Feld';
+            $customFieldOrder = [
+                'Vertraulichkeit',
+                'Klassifikation',
+                'Strategiebeitrag'
+            ];
 
-                // Optionen prüfen und Wert auflösen, falls vorhanden
-                $options = $customFieldMapping[$fieldId]['options'] ?? [];
-                $resolvedValue = $fieldValue; // Standardmäßig direkter Wert
+            echo "<li><strong>Zusätzliche Informationen:</strong><br><ul>";
 
-                if (!empty($options)) {
-                    foreach ($options as $option) {
-                        if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
-                            $resolvedValue = $option['value'];
-                            break;
+            foreach ($customFieldOrder as $fieldName) {
+                $found = false;
+
+                foreach ($value as $fieldId => $fieldValue) {
+                    $actualFieldName = $customFieldMapping[$fieldId]['name'] ?? '';
+
+                    if ($actualFieldName === $fieldName) {
+                        // Optionen prüfen und auflösen
+                        $options = $customFieldMapping[$fieldId]['options'] ?? [];
+                        $resolvedValue = $fieldValue;
+
+                        if (!empty($options)) {
+                            foreach ($options as $option) {
+                                if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
+                                    $resolvedValue = $option['value'];
+                                    break;
+                                }
+                            }
                         }
+
+                        echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br($resolvedValue) . "</li>";
+                        $found = true;
+                        break;
                     }
                 }
 
-                // Feld anzeigen
-                echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . htmlspecialchars($resolvedValue) . "</li>";
+                if (!$found) {
+                    echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> <em>Keine Angabe</em></li>";
+                }
             }
+
             echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
