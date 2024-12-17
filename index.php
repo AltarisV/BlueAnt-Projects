@@ -84,6 +84,34 @@ function getClientText($client, $token, $clientId, &$cache) {
     }
 }
 
+function getPersonName($client, $token, $personId, &$cache) {
+    if (isset($cache[$personId])) {
+        return $cache[$personId];
+    }
+
+    try {
+        $response = $client->get('v1/human/persons/' . $personId, [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token
+            ]
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        // Vorname und Nachname auslesen und speichern
+        if (isset($data['person']['firstname'], $data['person']['lastname'])) {
+            $fullname = $data['person']['firstname'] . ' ' . $data['person']['lastname'];
+            $cache[$personId] = $fullname;
+            return $fullname;
+        }
+    } catch (Exception $e) {
+        return 'unbekannt';
+    }
+
+    return 'unbekannt';
+}
+
 // API-Aufruf: Alle Währungen abrufen und Mapping aufbauen
 $currenciesResponse = $client->get('v1/masterdata/currencies', [
     'headers' => [
@@ -132,7 +160,21 @@ foreach ($typesData['types'] as $type) {
     }
 }
 
-
+$fieldOrder = [
+    'name' => 'Projektname',
+    'number' => 'Projektnummer',
+    'departmentId' => 'Unternehmensbereich',
+    'typeId' => 'Projektart',
+    'projectLeaderId' => 'Projektleiter',
+    'clients' => 'Kunden',
+    'priorityId' => 'Priorität',
+    'costCentreNumber' => 'Kostenstelle',
+    'planningType' => 'Planungsart',
+    'billingType' => 'Abrechnungsart',
+    'customFields' => 'Custom Fields',
+    'start' => 'Startdatum',
+    'end' => 'Enddatum'
+];
 
 
 $now = new DateTime();
@@ -195,45 +237,42 @@ foreach ($runningProjects as $project) {
     echo "<summary>" . htmlspecialchars($projectName) . "</summary>";
     echo "<ul>";
 
-    foreach ($project as $key => $value) {
+    foreach ($fieldOrder as $key => $label) {
+        if (!isset($project[$key])) {
+            continue; // Überspringen, falls das Feld nicht vorhanden ist
+        }
+
+        $value = $project[$key];
+
         if ($key === 'departmentId') {
-            // Department-Name anzeigen
             $depName = $departmentMapping[$value] ?? 'unbekannt';
-            echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($depName) . ")</li>";
-        } elseif ($key === 'currencyId') {
-            // Currency-Name anzeigen
-            $currencyName = $currencyMapping[$value] ?? 'unbekannt';
-            echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($currencyName) . ")</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($depName) . "</li>";
         } elseif ($key === 'typeId') {
-                    // Typ-Name anzeigen
-                    $typeName = $typeMapping[$value] ?? 'unbekannt';
-                    echo "<li><strong>{$key}:</strong> " . htmlspecialchars((string)$value) . " (" . htmlspecialchars($typeName) . ")</li>";
+            $typeName = $typeMapping[$value] ?? 'unbekannt';
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($typeName) . "</li>";
+        } elseif ($key === 'projectLeaderId') {
+            $leaderName = getPersonName($client, $token, $value, $personNameCache);
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leaderName) . "</li>";
         } elseif ($key === 'clients' && is_array($value)) {
-            // Clients ausgeben
-            echo "<li><strong>clients:</strong><br><ul>";
+            echo "<li><strong>{$label}:</strong><ul>";
             foreach ($value as $clientData) {
                 if (isset($clientData['clientId'])) {
                     $currentClientId = $clientData['clientId'];
                     $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
-                    // Client-Info ausgeben (ID und Name)
-                    echo "<li>clientId: " . htmlspecialchars((string)$currentClientId) . " (" . htmlspecialchars($clientText) . "), share: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "</li>";
-                } else {
-                    echo "<li>client: unvollständige Daten</li>";
+                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%)</li>";
                 }
             }
             echo "</ul></li>";
-        } elseif (is_array($value)) {
-            echo "<li><strong>" . htmlspecialchars($key) . ":</strong><br><ul>";
-            foreach ($value as $subKey => $subValue) {
-                if (is_array($subValue)) {
-                    echo "<li>" . htmlspecialchars($subKey) . ": <pre>" . htmlspecialchars(print_r($subValue, true)) . "</pre></li>";
-                } else {
-                    echo "<li>" . htmlspecialchars($subKey) . ": " . htmlspecialchars((string)$subValue) . "</li>";
-                }
+        } elseif ($key === 'customFields' && is_array($value)) {
+            echo "<li><strong>{$label}:</strong><ul>";
+            foreach ($value as $fieldKey => $fieldValue) {
+                echo "<li>" . htmlspecialchars($fieldKey) . ": " . htmlspecialchars((string)$fieldValue) . "</li>";
             }
             echo "</ul></li>";
+        } elseif ($key === 'start' || $key === 'end') {
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
         } else {
-            echo "<li><strong>" . htmlspecialchars($key) . ":</strong> " . htmlspecialchars((string)$value) . "</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars((string)$value) . "</li>";
         }
     }
 
