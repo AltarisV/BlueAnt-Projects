@@ -19,7 +19,10 @@ $projectsResponse = $client->get('v1/projects', [
     'headers' => [
         'Accept' => 'application/json',
         'Authorization' => 'Bearer ' . $token
-    ]
+    ],
+    'query' => [
+        'includeMemoFields' => 'true'
+        ]
 ]);
 
 $projectsData = json_decode($projectsResponse->getBody()->getContents(), true);
@@ -248,7 +251,9 @@ $fieldOrder = [
     'typeId' => 'Projektart',
     'statusId' => 'Projektstatus',
     'projectLeaderId' => 'Projektleiter',
-    'clients' => 'Kunden',
+    'subjectMemo' => 'Projektgegenstand',
+    'objectiveMemo' => 'Projektziel',
+    // 'clients' => 'Kunden',
     'priorityId' => 'Priorität',
     //'costCentreNumber' => 'Kostenstelle',
     'planningType' => 'Planungsart',
@@ -439,6 +444,8 @@ foreach ($runningProjects as $project) {
             echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
+        } elseif ($key === 'subjectMemo' || $key === 'objectiveMemo') {
+            echo "<li><strong>{$label}:</strong> " . nl2br(htmlspecialchars($value)) . "</li>";
         } else {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars((string)$value) . "</li>";
         }
