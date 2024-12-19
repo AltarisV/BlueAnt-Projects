@@ -353,6 +353,19 @@ echo <<<HTML
         });
     });
     </script>
+    <style>
+        details summary {
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        details summary span {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: gray;
+            margin-left: 10px;
+        }
+    </style>;
 </head>
 <body>
     <h1>Laufende Projekte</h1>
@@ -379,7 +392,15 @@ foreach ($runningProjects as $project) {
     $statusDetails = getStatusDetails($client, $token, $project['statusId'], $statusCache);
     $status = $statusDetails['text'] ?? 'unbekannt';
     $leader = getPersonName($client, $token, $project['projectLeaderId'], $personNameCache);
+    $subjectMemo = $project['subjectMemo'] ?? '';
+    $objectiveMemo = $project['objectiveMemo'] ?? '';
     $projectLink = "https://dashboard-examples.blueant.cloud/psap?project=" . urlencode($projectNumber);
+
+    $endDate = isset($project['end']) ? new DateTime($project['end']) : null;
+    $interval = $endDate ? $now->diff($endDate) : null;
+    $remainingTime = $interval
+        ? ($interval->invert ? 'Abgeschlossen' : $interval->format('%a Tage verbleibend'))
+        : 'Kein Enddatum';
 
     echo "<div class='project-card' 
             data-name='" . htmlspecialchars($projectName) . "' 
@@ -390,7 +411,15 @@ foreach ($runningProjects as $project) {
             data-leader='" . htmlspecialchars($leader) . "'>";
 
     echo "<details>";
-    echo "<summary>" . htmlspecialchars($projectName) . "</summary>";
+    echo "<summary>";
+    echo htmlspecialchars($projectName);
+    echo "<span>| Laufzeit: " . htmlspecialchars($remainingTime) . "</span>";
+    echo "<span>| Status: " . htmlspecialchars($status) . "</span>";
+    echo "<span>| Leiter: " . htmlspecialchars($leader) . "</span>";
+    if (!empty($subjectMemo)) {
+        echo "<span>| Gegenstand: " . htmlspecialchars($subjectMemo) . "</span>";
+    }
+    echo "</summary>";
     echo "<ul>";
 
     foreach ($fieldOrder as $key => $label) {
