@@ -379,6 +379,7 @@ foreach ($runningProjects as $project) {
     $statusDetails = getStatusDetails($client, $token, $project['statusId'], $statusCache);
     $status = $statusDetails['text'] ?? 'unbekannt';
     $leader = getPersonName($client, $token, $project['projectLeaderId'], $personNameCache);
+    $projectLink = "https://dashboard-examples.blueant.cloud/psap?project=" . urlencode($projectNumber);
 
     echo "<div class='project-card' 
             data-name='" . htmlspecialchars($projectName) . "' 
@@ -450,6 +451,7 @@ foreach ($runningProjects as $project) {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars((string)$value) . "</li>";
         }
     }
+    echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
 
     echo "</ul>";
     echo "</details>";
