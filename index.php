@@ -384,6 +384,22 @@ echo <<<HTML
     </div>
 HTML;
 
+echo "<table class='project-table'>
+        <thead>
+            <tr>
+                <th>Details</th>
+                <th>Projektname</th>
+                <th>Projektleiter</th>
+                <th>Status</th>
+                <th>Laufzeit</th>
+                <th>Projektstart</th>
+                <th>Bereich</th>
+                <th>Listbox</th>
+                <th>Text</th>
+            </tr>
+        </thead>
+        <tbody>";
+
 foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
     $projectNumber = $project['number'] ?? '';
@@ -402,90 +418,72 @@ foreach ($runningProjects as $project) {
         ? ($interval->invert ? 'Abgeschlossen' : $interval->format('%a Tage verbleibend'))
         : 'Kein Enddatum';
 
-    echo "<div class='project-card' 
-            data-name='" . htmlspecialchars($projectName) . "' 
-            data-number='" . htmlspecialchars($projectNumber) . "' 
-            data-department='" . htmlspecialchars($department) . "' 
-            data-type='" . htmlspecialchars($type) . "' 
-            data-status='" . htmlspecialchars($status) . "' 
+    echo "<tr class='project-row'
+            data-name='" . htmlspecialchars($projectName) . "'
+            data-number='" . htmlspecialchars($projectNumber) . "'
+            data-department='" . htmlspecialchars($department) . "'
+            data-type='" . htmlspecialchars($type) . "'
+            data-status='" . htmlspecialchars($status) . "'
             data-leader='" . htmlspecialchars($leader) . "'>";
 
-    echo "<details>";
-    echo "<summary>";
-    echo htmlspecialchars($projectName);
-    echo "<span>| Laufzeit: " . htmlspecialchars($remainingTime) . "</span>";
-    echo "<span>| Status: " . htmlspecialchars($status) . "</span>";
-    echo "<span>| Leiter: " . htmlspecialchars($leader) . "</span>";
+    echo "<td><a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Details</a></td>";
+    echo "<td>" . htmlspecialchars($projectName) . "</td>";
+    echo "<td>" . htmlspecialchars($leader) . "</td>";
+    echo "<td>" . htmlspecialchars($status) . "</td>";
+    echo "<td>" . htmlspecialchars($remainingTime) . "</td>";
+    echo "<td>" . htmlspecialchars($project['start'] ?? 'Kein Startdatum') . "</td>";
+    echo "<td>" . htmlspecialchars($department) . "</td>";
+
+    // Listbox Spalte (z.B. für die Clients)
+    echo "<td>";
+    if (isset($project['clients']) && is_array($project['clients'])) {
+        echo "<ul>";
+        foreach ($project['clients'] as $clientData) {
+            if (isset($clientData['clientId'])) {
+                $currentClientId = $clientData['clientId'];
+                $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
+                echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%)</li>";
+            }
+        }
+        echo "</ul>";
+    }
+    echo "</td>";
+
+    // Text-Spalte (z.B. für Memo-Informationen)
+    echo "<td>";
     if (!empty($subjectMemo)) {
-        echo "<span>| Gegenstand: " . htmlspecialchars($subjectMemo) . "</span>";
+        echo "<strong>Gegenstand:</strong> " . nl2br(htmlspecialchars($subjectMemo)) . "<br>";
     }
-    echo "</summary>";
-    echo "<ul>";
-
-    foreach ($fieldOrder as $key => $label) {
-        if (!isset($project[$key])) {
-            continue; // Überspringen, falls das Feld nicht vorhanden ist
-        }
-
-        $value = $project[$key];
-
-        if ($key === 'departmentId') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($department) . "</li>";
-        } elseif ($key === 'typeId') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($type) . "</li>";
-        } elseif ($key === 'statusId') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($status) . "</li>";
-        } elseif ($key === 'projectLeaderId') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leader) . "</li>";
-        } elseif ($key === 'clients' && is_array($value)) {
-            echo "<li><strong>{$label}:</strong><ul>";
-            foreach ($value as $clientData) {
-                if (isset($clientData['clientId'])) {
-                    $currentClientId = $clientData['clientId'];
-                    $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
-                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%</li>";
-                }
-            }
-            echo "</ul></li>";
-        } elseif ($key === 'priorityId') {
-            $priorityText = $priorityMapping[$value] ?? 'unbekannt';
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
-        } elseif ($key === 'customFields' && is_array($value)) {
-            $customFieldOrder = ['Vertraulichkeit', 'Klassifikation', 'Strategiebeitrag'];
-            echo "<li><strong>Zusätzliche Informationen:</strong><br><ul>";
-
-            foreach ($customFieldOrder as $fieldName) {
-                foreach ($value as $fieldId => $fieldValue) {
-                    $actualFieldName = $customFieldMapping[$fieldId]['name'] ?? '';
-                    if ($actualFieldName === $fieldName) {
-                        $options = $customFieldMapping[$fieldId]['options'] ?? [];
-                        $resolvedValue = $fieldValue;
-                        foreach ($options as $option) {
-                            if (isset($option['key'], $option['value']) && $option['key'] == $fieldValue) {
-                                $resolvedValue = $option['value'];
-                                break;
-                            }
-                        }
-                        echo "<li><strong>" . htmlspecialchars($fieldName) . ":</strong> " . nl2br(htmlspecialchars($resolvedValue)) . "</li>";
-                        break;
-                    }
-                }
-            }
-            echo "</ul></li>";
-        } elseif ($key === 'start' || $key === 'end') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
-        } elseif ($key === 'subjectMemo' || $key === 'objectiveMemo') {
-            echo "<li><strong>{$label}:</strong> " . nl2br(htmlspecialchars($value)) . "</li>";
-        } else {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars((string)$value) . "</li>";
-        }
+    if (!empty($objectiveMemo)) {
+        echo "<strong>Objektiv:</strong> " . nl2br(htmlspecialchars($objectiveMemo)) . "<br>";
     }
-    echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
+    echo "</td>";
 
-    echo "</ul>";
-    echo "</details>";
-    echo "</div>";
+    echo "</tr>";
 }
 
-echo "</div>";
-echo "</body></html>";
+echo "</tbody></table>";
+
+echo <<<JS
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const filterType = document.getElementById("filterType");
+    const projectFilter = document.getElementById("projectFilter");
+    const projectRows = document.querySelectorAll(".project-row");
+
+    projectFilter.addEventListener("input", () => {
+        const filterValue = projectFilter.value.toLowerCase();
+        const filterKey = filterType.value; // JavaScript-Variable, nicht PHP!
+
+        projectRows.forEach(row => {
+            const attributeValue = row.getAttribute(`data-\${filterKey}`)?.toLowerCase() || "";
+            if (attributeValue.includes(filterValue)) {
+                row.style.display = ""; // Zeige die Zeile, wenn sie dem Filter entspricht
+            } else {
+                row.style.display = "none"; // Verstecke die Zeile, wenn sie nicht passt
+            }
+        });
+    });
+});
+</script>
+JS;
