@@ -368,6 +368,12 @@ echo <<<HTML
     </style>;
 </head>
 <body>
+        <div class="navbar">
+            <ul>
+                <li><a href="index.php">Laufende Projekte</a></li>
+                <li><a href="detailansicht.php">Projekt-Details</a></li>
+            </ul>
+        </div>
     <h1>Laufende Projekte</h1>
     <div class="filter-container">
         <label for="projectFilter"><strong>Filter nach:</strong></label>
@@ -486,4 +492,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Alle Navbar-Links abrufen
+        const navbarLinks = document.querySelectorAll('.navbar a');
+
+        // Die aktuelle URL der Seite abrufen
+        const currentUrl = window.location.pathname;
+
+        // Über alle Links in der Navbar iterieren
+        navbarLinks.forEach(link => {
+            // Wenn der Link zur aktuellen Seite führt, füge die 'active' Klasse hinzu
+            if (link.href.includes(currentUrl)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    });
+</script>
+
 JS;
