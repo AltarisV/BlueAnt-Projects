@@ -422,13 +422,18 @@ foreach ($runningProjects as $project) {
     echo "</summary>";
     echo "<ul>";
 
+// Display the project link first for easy access
+    echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
+
+// Process and display key project details
     foreach ($fieldOrder as $key => $label) {
         if (!isset($project[$key])) {
-            continue; // Überspringen, falls das Feld nicht vorhanden ist
+            continue; // Skip if the field is not available
         }
 
         $value = $project[$key];
 
+        // Display specific fields with their resolved values
         if ($key === 'departmentId') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($department) . "</li>";
         } elseif ($key === 'typeId') {
@@ -437,21 +442,12 @@ foreach ($runningProjects as $project) {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($status) . "</li>";
         } elseif ($key === 'projectLeaderId') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leader) . "</li>";
-        } elseif ($key === 'clients' && is_array($value)) {
-            echo "<li><strong>{$label}:</strong><ul>";
-            foreach ($value as $clientData) {
-                if (isset($clientData['clientId'])) {
-                    $currentClientId = $clientData['clientId'];
-                    $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
-                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%</li>";
-                }
-            }
-            echo "</ul></li>";
         } elseif ($key === 'priorityId') {
             $priorityText = $priorityMapping[$value] ?? 'unbekannt';
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($priorityText) . "</li>";
         } elseif ($key === 'customFields' && is_array($value)) {
-            $customFieldOrder = ['Vertraulichkeit', 'Klassifikation', 'Strategiebeitrag'];
+            // Display custom fields in a nested list
+            $customFieldOrder = ['Vertraulichkeit', 'Klassifikation', 'Strategiebeitrag','Frage1', 'Antwort1', 'Frage2', 'Antwort2', 'Frage3', 'Antwort3', 'Frage4', 'Antwort4'];
             echo "<li><strong>Zusätzliche Informationen:</strong><br><ul>";
 
             foreach ($customFieldOrder as $fieldName) {
@@ -472,17 +468,31 @@ foreach ($runningProjects as $project) {
                 }
             }
             echo "</ul></li>";
+        } elseif ($key === 'clients' && is_array($value)) {
+            // Display client data in a nested list
+            echo "<li><strong>{$label}:</strong><ul>";
+            foreach ($value as $clientData) {
+                if (isset($clientData['clientId'])) {
+                    $currentClientId = $clientData['clientId'];
+                    $clientText = getClientText($client, $token, $currentClientId, $clientNameCache);
+                    echo "<li>" . htmlspecialchars($clientText) . " (Anteil: " . htmlspecialchars((string)($clientData['share'] ?? '')) . "%)</li>";
+                }
+            }
+            echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
+            // Display start and end dates
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
         } elseif ($key === 'subjectMemo' || $key === 'objectiveMemo') {
+            // Display memos with line breaks
             echo "<li><strong>{$label}:</strong> " . nl2br(htmlspecialchars($value)) . "</li>";
         } else {
+            // Display other fields
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars((string)$value) . "</li>";
         }
     }
-    echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
 
     echo "</ul>";
+
     echo "</details>";
     echo "</div>";
 }
