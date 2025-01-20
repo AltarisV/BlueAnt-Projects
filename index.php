@@ -365,9 +365,11 @@ echo <<<HTML
             color: gray;
             margin-left: 10px;
         }
-    </style>;
+    </style>
 </head>
 <body>
+    <div class="header-background"></div>
+    <div class="container">
     <h1>Laufende Projekte</h1>
     <div class="filter-container">
         <label for="projectFilter"><strong>Filter nach:</strong></label>
@@ -382,6 +384,7 @@ echo <<<HTML
         <input type="text" id="projectFilter" placeholder="Filter eingeben..." list="filterSuggestions">
         <datalist id="filterSuggestions"></datalist>
     </div>
+    <div class="projects-container">
 HTML;
 
 foreach ($runningProjects as $project) {
@@ -420,7 +423,7 @@ foreach ($runningProjects as $project) {
         echo "<span>| Gegenstand: " . htmlspecialchars($subjectMemo) . "</span>";
     }
     echo "</summary>";
-    echo "<ul>";
+    echo "<hr/><ul>";
 
 // Display the project link first for easy access
     echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
@@ -448,7 +451,7 @@ foreach ($runningProjects as $project) {
         } elseif ($key === 'customFields' && is_array($value)) {
             // Display custom fields in a nested list
             $customFieldOrder = ['Vertraulichkeit', 'Klassifikation', 'Strategiebeitrag','Frage1', 'Antwort1', 'Frage2', 'Antwort2', 'Frage3', 'Antwort3', 'Frage4', 'Antwort4'];
-            echo "<li><strong>Zusätzliche Informationen:</strong><br><ul>";
+            echo "<li class='additional-info'><strong>Zusätzliche Informationen:</strong><ul>";
 
             foreach ($customFieldOrder as $fieldName) {
                 foreach ($value as $fieldId => $fieldValue) {
@@ -497,5 +500,5 @@ foreach ($runningProjects as $project) {
     echo "</div>";
 }
 
-echo "</div>";
-echo "</body></html>";
+echo "</div></div>";
+echo "</div></body></html>";
