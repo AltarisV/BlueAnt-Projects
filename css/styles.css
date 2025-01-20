@@ -241,3 +241,39 @@ hr {
         grid-template-columns: 1fr; /* Single column for mobile */
     }
 }
+
+.milestones {
+    grid-column: 1 / 4;
+}
+
+.milestones ul {
+    padding: 0;
+    margin: 0;
+}
+
+.milestones ul li{
+    display: grid;
+    grid-template-columns: 30px auto;
+    padding: 0;
+    font-size: 16px;
+}
+
+.milestones ul li span{
+    display: flex;
+    align-items: start;
+    justify-content: start;
+    flex-direction: column;
+}
+
+.milestones ul li strong{
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    font-size: 25px;
+}
+
+.milestones ul li span strong{
+    font-size: 18px;
+    color:#3f4447;
+}
+
