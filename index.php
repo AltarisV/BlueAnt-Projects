@@ -578,11 +578,11 @@ foreach ($runningProjects as $project) {
 
     // Display milestones
     if (!empty($milestones)) {
-        echo "<li><strong>Meilensteine:</strong><ul>";
+        echo "<li class='milestones'><strong>Meilensteine:</strong><ul>";
         foreach ($milestones as $milestone) {
             echo "<li><strong>" . htmlspecialchars($milestone['number']) . ":</strong> " .
-                htmlspecialchars($milestone['description']) .
-                " (Fortschritt: " . htmlspecialchars($milestone['progress']) . "%)</li>";
+                "<span><strong>" . htmlspecialchars($milestone['description']) .
+                "</strong>(Fortschritt: " . htmlspecialchars($milestone['progress']) . "%)</span></li>";
         }
         echo "</ul></li>";
     } else {
