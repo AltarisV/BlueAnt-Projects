@@ -62,6 +62,50 @@ function getMilestones($client, $token, $projectId): array {
     }
 }
 
+// Hilfsfunktion: Letzten Statuswechsel auslesen
+function getLastStatusChange($client, $token, $projectId, &$statusCache): array {
+    try {
+        $response = $client->get("v1/projects/{$projectId}/statushistory", [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token
+            ]
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        if ($data['status']['name'] === 'OK' && !empty($data['projectStatusHistory'])) {
+            $lastChange = $data['projectStatusHistory'][count($data['projectStatusHistory']) - 1];
+            $date = $lastChange['date'] ?? 'unbekannt';
+
+            // Alten Statusnamen holen, falls vorhanden
+            $oldStatusId = $lastChange['oldStatusId'] ?? null;
+
+            if ($oldStatusId !== null) {
+                $oldStatusDetails = getStatusDetails($client, $token, $oldStatusId, $statusCache);
+                $oldStatus = $oldStatusDetails['text'] ?? 'unbekannt';
+            } else {
+                $oldStatus = 'unbekannt';
+            }
+
+            // Formatierung des Datums in ein lesbares Format
+            $formattedDate = (new DateTime($date))->format('d.m.Y');
+            return [
+                'date' => $formattedDate,
+                'oldStatus' => $oldStatus
+            ];
+        }
+    } catch (Exception $e) {
+        // Fehlerbehandlung
+        error_log("Fehler beim Abrufen der Statushistorie für Projekt ID: {$projectId}");
+    }
+
+    return [
+        'date' => 'unbekannt',
+        'oldStatus' => 'unbekannt'
+    ];
+}
+
 
 // Departments abrufen
 $departmentsResponse = $client->get('v1/masterdata/departments', [
@@ -420,6 +464,7 @@ foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
     $projectNumber = $project['number'] ?? '';
     $milestones = getMilestones($client, $token, $project['id']);
+    $lastStatusChange = getLastStatusChange($client, $token, $project['id'], $statusCache);
     $department = $departmentMapping[$project['departmentId']] ?? 'unbekannt';
     $type = $typeMapping[$project['typeId']] ?? 'unbekannt';
     $statusDetails = getStatusDetails($client, $token, $project['statusId'], $statusCache);
@@ -472,7 +517,14 @@ foreach ($runningProjects as $project) {
         } elseif ($key === 'typeId') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($type) . "</li>";
         } elseif ($key === 'statusId') {
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($status) . "</li>";
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($status) . "<br>";
+            if ($lastStatusChange['date'] !== 'unbekannt') {
+                echo "<span class='status-date'>Seit: " . htmlspecialchars($lastStatusChange['date']) . "</span>";
+            }
+            if ($lastStatusChange['oldStatus'] !== 'unbekannt') {
+                echo "<br><span class='old-status'>Vorheriger Status: " . htmlspecialchars($lastStatusChange['oldStatus']) . "</span>";
+            }
+            echo "</li>";
         } elseif ($key === 'projectLeaderId') {
             echo "<li><strong>{$label}:</strong> " . htmlspecialchars($leader) . "</li>";
         } elseif ($key === 'priorityId') {
@@ -513,8 +565,8 @@ foreach ($runningProjects as $project) {
             }
             echo "</ul></li>";
         } elseif ($key === 'start' || $key === 'end') {
-            // Display start and end dates
-            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($value) . "</li>";
+            $date = isset($value) ? (new DateTime($value))->format('d.m.Y') : 'Kein Datum';
+            echo "<li><strong>{$label}:</strong> " . htmlspecialchars($date) . "</li>";
         } elseif ($key === 'subjectMemo' || $key === 'objectiveMemo') {
             // Display memos with line breaks
             echo "<li><strong>{$label}:</strong> " . nl2br(htmlspecialchars($value)) . "</li>";
