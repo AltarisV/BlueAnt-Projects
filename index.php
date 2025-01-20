@@ -34,6 +34,35 @@ if (!isset($projectsData['projects'])) {
 
 $projects = $projectsData['projects'];
 
+// Hilfsfunktion: Meilensteine ausgeben
+function getMilestones($client, $token, $projectId): array {
+    $planningEntriesResponse = $client->get("v1/projects/{$projectId}/planningentries", [
+        'headers' => [
+            'Accept' => 'application/json',
+            'Authorization' => 'Bearer ' . $token
+        ]
+    ]);
+
+    $planningEntriesData = json_decode($planningEntriesResponse->getBody()->getContents(), true);
+
+    if ($planningEntriesData['status']['name'] === 'OK') {
+        $milestones = array_filter($planningEntriesData['entries'], function ($entry) {
+            return $entry['entryType'] === 'milestone';
+        });
+
+        return array_map(function ($milestone) {
+            return [
+                'number' => $milestone['number'],
+                'description' => $milestone['description'],
+                'progress' => $milestone['progressActual']
+            ];
+        }, $milestones);
+    } else {
+        return [];
+    }
+}
+
+
 // Departments abrufen
 $departmentsResponse = $client->get('v1/masterdata/departments', [
     'headers' => [
@@ -390,6 +419,7 @@ HTML;
 foreach ($runningProjects as $project) {
     $projectName = $project['name'] ?? 'Ohne Namen';
     $projectNumber = $project['number'] ?? '';
+    $milestones = getMilestones($client, $token, $project['id']);
     $department = $departmentMapping[$project['departmentId']] ?? 'unbekannt';
     $type = $typeMapping[$project['typeId']] ?? 'unbekannt';
     $statusDetails = getStatusDetails($client, $token, $project['statusId'], $statusCache);
@@ -425,10 +455,10 @@ foreach ($runningProjects as $project) {
     echo "</summary>";
     echo "<hr/><ul>";
 
-// Display the project link first for easy access
+    // Display the project link first for easy access
     echo "<li><strong>Projektlink:</strong> <a href='" . htmlspecialchars($projectLink) . "' target='_blank'>Zum Projekt in BlueAnt</a></li>";
 
-// Process and display key project details
+    // Process and display key project details
     foreach ($fieldOrder as $key => $label) {
         if (!isset($project[$key])) {
             continue; // Skip if the field is not available
@@ -494,6 +524,19 @@ foreach ($runningProjects as $project) {
         }
     }
 
+    // Display milestones
+    if (!empty($milestones)) {
+        echo "<li><strong>Meilensteine:</strong><ul>";
+        foreach ($milestones as $milestone) {
+            echo "<li><strong>" . htmlspecialchars($milestone['number']) . ":</strong> " .
+                htmlspecialchars($milestone['description']) .
+                " (Fortschritt: " . htmlspecialchars($milestone['progress']) . "%)</li>";
+        }
+        echo "</ul></li>";
+    } else {
+        echo "<li><strong>Meilensteine:</strong> Keine verfügbar</li>";
+    }
+
     echo "</ul>";
 
     echo "</details>";
@@ -501,4 +544,4 @@ foreach ($runningProjects as $project) {
 }
 
 echo "</div></div>";
-echo "</div></body></html>";
+echo "</body></html>";
